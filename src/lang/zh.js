@@ -1,6 +1,13 @@
 export default {
   route: {
     dashboard: '首页',
+    linkcs: '放单平台',
+    linkcs_create: '新建',
+    linkcs_list: '列表',
+    auth: '用户管理',
+    auth_summary: '用户总览',
+    develop: '开发选项',
+    dev_debug_option: '调试选项',
     documentation: '文档',
     guide: '引导页',
     permission: '权限测试页',
@@ -79,7 +86,12 @@ export default {
     password: '密码',
     any: '随便填',
     thirdparty: '第三方登录',
-    thirdpartyTips: '本地不能模拟，请结合自己业务进行模拟！！！'
+    thirdpartyTips: '本地不能模拟，请结合自己业务进行模拟！！！',
+    capslock_on: '大写锁定已打开',
+    error_tips: {
+      username: '请输入正确的账号',
+      password: '密码至少6位'
+    }
   },
   documentation: {
     documentation: '文档',

@@ -1,6 +1,13 @@
 export default {
   route: {
     dashboard: 'Dashboard',
+    linkcs: 'LS-Platform',
+    linkcs_create: 'Create',
+    linkcs_list: 'List',
+    auth: 'User Manager',
+    auth_summary: 'User Summary',
+    develop: 'Development',
+    dev_debug_option: 'Debug Option',
     documentation: 'Documentation',
     guide: 'Guide',
     permission: 'Permission',
@@ -79,7 +86,12 @@ export default {
     password: 'Password',
     any: 'any',
     thirdparty: 'Or connect with',
-    thirdpartyTips: 'Can not be simulated on local, so please combine you own business simulation! ! !'
+    thirdpartyTips: 'Can not be simulated on local, so please combine you own business simulation! ! !',
+    capslock_on: 'Caps lock is On',
+    error_tips: {
+      username: 'Please enter the correct user name',
+      password: 'The password can not be less than 6 digits'
+    }
   },
   documentation: {
     documentation: 'Documentation',

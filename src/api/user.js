@@ -1,24 +1,20 @@
-import request from '@/utils/request'
-
+// import request from '@/utils/request'
+import request from '@/utils/request-spoon'
 export function login(data) {
-  return request({
-    url: '/user/login',
-    method: 'post',
-    data
+  return request.post('/auth/v1/tokens', {
+    workid: data.username,
+    password: data.password
   })
 }
 
-export function getInfo(token) {
-  return request({
-    url: '/user/info',
-    method: 'get',
-    params: { token }
+export function getInfo(workid) {
+  return request.get('auth/v1/users', {
+    params: {
+      'workid': workid
+    }
   })
 }
 
 export function logout() {
-  return request({
-    url: '/user/logout',
-    method: 'post'
-  })
+  return request.delete('auth/v1/tokens')
 }

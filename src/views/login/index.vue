@@ -24,7 +24,7 @@
         />
       </el-form-item>
 
-      <el-tooltip v-model="capsTooltip" content="Caps lock is On" placement="right" manual>
+      <el-tooltip v-model="capsTooltip" :content="$t('login.capslock_on')" placement="right" manual>
         <el-form-item prop="password">
           <span class="svg-container">
             <svg-icon icon-class="password" />
@@ -54,6 +54,11 @@
 
       <div style="position:relative">
         <div class="tips">
+          忘记密码请联系管理员重置 <br>
+          CS: Vernie Gu / Margaret Huang<br>
+          Shipping: Byron Gong / Ivan Lin
+        </div>
+        <!-- <div class="tips">
           <span>{{ $t('login.username') }} : admin</span>
           <span>{{ $t('login.password') }} : {{ $t('login.any') }}</span>
         </div>
@@ -62,7 +67,7 @@
             {{ $t('login.username') }} : editor
           </span>
           <span>{{ $t('login.password') }} : {{ $t('login.any') }}</span>
-        </div>
+        </div> -->
 
         <el-button class="thirdparty-button" type="primary" @click="showDialog=true">
           {{ $t('login.thirdparty') }}
@@ -91,22 +96,22 @@ export default {
   data() {
     const validateUsername = (rule, value, callback) => {
       if (!validUsername(value)) {
-        callback(new Error('Please enter the correct user name'))
+        callback(new Error(this.$t('login.error_tips.username')))
       } else {
         callback()
       }
     }
     const validatePassword = (rule, value, callback) => {
       if (value.length < 6) {
-        callback(new Error('The password can not be less than 6 digits'))
+        callback(new Error(this.$t('login.error_tips.password')))
       } else {
         callback()
       }
     }
     return {
       loginForm: {
-        username: 'admin',
-        password: '111111'
+        username: '8020507',
+        password: '123456'
       },
       loginRules: {
         username: [{ required: true, trigger: 'blur', validator: validateUsername }],
@@ -174,6 +179,7 @@ export default {
           this.loading = true
           this.$store.dispatch('user/login', this.loginForm)
             .then(() => {
+              // this.$router.push({ path: '/404' })
               this.$router.push({ path: this.redirect || '/', query: this.otherQuery })
               this.loading = false
             })
