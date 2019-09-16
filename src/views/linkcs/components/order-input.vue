@@ -20,6 +20,7 @@
         min-rows="3"
         placeholder="请在此处输入单号，用英文逗号分开"
         autofocus
+        :readonly="readonly"
       />
       <p>共识别 {{ panel.convertList.length }} 条记录</p>
       <el-input
@@ -51,6 +52,12 @@ export default {
         return []
       },
       type: Array
+    },
+    readonly: {
+      default() {
+        return false
+      },
+      type: Boolean
     }
   },
   data() {

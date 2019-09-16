@@ -1,31 +1,20 @@
 <template>
-  <div class="dashboard-container">
-    <component :is="currentRole" />
+  <div style="text-align:center">
+    <h1>Now</h1>
+    <clock />
+    <p>光阴荏苒，日月如梭</p>
   </div>
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
-import adminDashboard from './admin'
-import editorDashboard from './editor'
-
+import Clock from './components/clock'
+// import echarts from 'echarts'
+// import LineChart from './components/line-chart'
 export default {
-  name: 'Dashboard',
-  components: { adminDashboard, editorDashboard },
-  data() {
-    return {
-      currentRole: 'adminDashboard'
-    }
-  },
-  computed: {
-    ...mapGetters([
-      'roles'
-    ])
-  },
-  created() {
-    if (!this.roles.includes('admin')) {
-      this.currentRole = 'editorDashboard'
-    }
-  }
+  components: { Clock }
 }
 </script>
+
+<style>
+
+</style>

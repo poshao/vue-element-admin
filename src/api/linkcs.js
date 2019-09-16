@@ -2,9 +2,6 @@
  * 放单平台API
  */
 import client from '@/utils/request-spoon'
-import {
-  datetimeFormat
-} from '@/utils/common'
 
 import { Base64 } from 'js-base64'
 
@@ -147,6 +144,13 @@ export const removeFile = (filename) => {
 }
 
 /** ********************************************************
+ * 使用状态
+ *********************************************************/
+export const getOrderCountStatus = () => {
+  return client.get('linkcs/v1/status')
+}
+
+/** ********************************************************
  * 报表结构
  *********************************************************/
 /**
@@ -224,56 +228,56 @@ export const getFieldsFromViewStruct = (viewStruct, fieldList) => {
  * @param {array} viewData 表单列表(in)
  * @param {object} store 输出数据(out)
  */
-export const convertViewData2StoreData = (viewData, store) => {
-  viewData.forEach((v, k) => {
-    // 检查必填项
-    console.log(v.title + ':' + v.value)
-    if ((v.required === undefined || v.required === true) && v.value === undefined) {
-      throw new Error(v.title + ' required')
-    }
-    // 检查转码
-    if (v.value === undefined) {
-      //
-    } else if (v.encoding === true) {
-      store[v.id] = encodeURIComponent(v.value)
-    } else {
-      // 对日期转码处理
-      // console.log(v.id)
-      // console.log(v.value)
-      // console.log(v.value instanceof Date)
-      if (v.value instanceof Date) {
-        store[v.id] = datetimeFormat(v.value, 'yyyy/MM/dd hh:mm:ss')
-      } else {
-        store[v.id] = v.value
-      }
-    }
-    if (v.more) {
-      convertViewData2StoreData(v.more, store)
-    }
-  })
-}
+// export const convertViewData2StoreData = (viewData, store) => {
+//   viewData.forEach((v, k) => {
+//     // 检查必填项
+//     console.log(v.title + ':' + v.value)
+//     if ((v.required === undefined || v.required === true) && v.value === undefined) {
+//       throw new Error(v.title + ' required')
+//     }
+//     // 检查转码
+//     if (v.value === undefined) {
+//       //
+//     } else if (v.encoding === true) {
+//       store[v.id] = encodeURIComponent(v.value)
+//     } else {
+//       // 对日期转码处理
+//       // console.log(v.id)
+//       // console.log(v.value)
+//       // console.log(v.value instanceof Date)
+//       if (v.value instanceof Date) {
+//         store[v.id] = datetimeFormat(v.value, 'yyyy/MM/dd hh:mm:ss')
+//       } else {
+//         store[v.id] = v.value
+//       }
+//     }
+//     if (v.more) {
+//       convertViewData2StoreData(v.more, store)
+//     }
+//   })
+// }
 /**
  * 将存储数据转化为显示结构
  * @param {object} viewStruct 显示模板(in)
  * @param {object} store 存储数据
  */
-export const convertStoreData2ViewData = (viewStruct, store) => {
-  viewStruct.forEach((v, k) => {
-    if (store[v.id] !== undefined) {
-      if (v.encoding === true) {
-        v.value = decodeURIComponent(store[v.id])
-      } else {
-        v.value = store[v.id]
-      }
-      if (v.options !== undefined) {
-        v.more = v.options[store[v.id]]
-      }
-    }
-    if (v.more) {
-      convertStoreData2ViewData(v.more, store)
-    }
-  })
-}
+// export const convertStoreData2ViewData = (viewStruct, store) => {
+//   viewStruct.forEach((v, k) => {
+//     if (store[v.id] !== undefined) {
+//       if (v.encoding === true) {
+//         v.value = decodeURIComponent(store[v.id])
+//       } else {
+//         v.value = store[v.id]
+//       }
+//       if (v.options !== undefined) {
+//         v.more = v.options[store[v.id]]
+//       }
+//     }
+//     if (v.more) {
+//       convertStoreData2ViewData(v.more, store)
+//     }
+//   })
+// }
 /**
  * 将数据转为报表
  * @param {object} store 存储数据

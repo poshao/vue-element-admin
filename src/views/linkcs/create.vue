@@ -16,13 +16,14 @@
         <el-form :label-width="'90'" class="form">
           <h1 style="text-align:center">New Request</h1>
 
-          <Container :ele="ele" />
+          <MControl :ele="ele" />
+          <!-- <Container :ele="ele" /> -->
 
           <el-upload
             :action="upload.url"
             drag
             multiple
-            max-size="5000"
+            max-size="20000"
             :headers="{'xtoken':this.$store.state.user.token}"
             :file-list="upload.list"
             :on-preview="handlePreview"
@@ -42,26 +43,42 @@
 </template>
 
 <script>
-import Container from './components/container.vue'
-import { mapActions } from 'vuex'
+// import Container from './components/container.vue'
+// import { mapActions } from 'vuex'
+import { createNamespacedHelpers } from 'vuex'
+const { mapActions } = createNamespacedHelpers('linkcs')
 import { downloadFile2 } from '@/utils/common'
-import { deepClone } from '@/utils/index'
+import {
+  getStoreData,
+  fillStoreData
+} from '@/utils/linkcs'
+// import { deepClone } from '@/utils/index'
 import {
   listUploadedFiles,
   removeFile,
-  convertViewData2StoreData,
+  // convertViewData2StoreData,
   resetAttchments
 } from '@/api/linkcs'
+
 export default {
   components: {
-    'Container': Container
+    // 'Container': Container,
+    'MControl': () => import('./components/mcontrol')
     // 'OrderInput': () => import('./components/order-input.vue')
   },
   data() {
     return {
-      ele: {},
+      ele: {
+        control: {
+          type: 'layout',
+          children: {
+            'layout': this.$store.getters['linkcs/baseForm']
+          }
+        }
+        // value:'layout'
+      },
       upload: {
-        url: this.$store.getters.uploadUrl,
+        url: this.$store.getters['linkcs/uploadUrl'],
         list: []
       },
       // 订单列表
@@ -81,17 +98,13 @@ export default {
     this.resetData(this.$route.params.items)
   },
   methods: {
-    ...mapActions(['handleNewRequest', 'handleListRequest', 'handleGetFile']),
+    ...mapActions(['handleNewRequest', 'handleListRequest', 'handleGetFile', 'getStoreData']),
     handleOrderInputSubmit(order) {
       this.orders = order
     },
     handleExceedSize(file) {
-      this.$message.error(file.name + '文件过大(文件上传限制5MB)')
+      this.$message({ message: file.name + '文件过大(文件上传限制5MB)', type: 'warnning' })
     },
-    // handleProgress (event, file, filelist) {
-    //   // 修正文件名中的非法字符 & #
-    //   // file.name = file.name.replace('#', '_').replace('&', '_')
-    // },
     handlePreview(file) {
       this.handleGetFile(file.name).then(res => {
         downloadFile2(res)
@@ -100,14 +113,19 @@ export default {
     handleRemove(file) {
       // console.log(file)
       removeFile(file.name).then(res => {
-        this.$message.info('删除成功')
+        this.$message({ message: '删除成功' })
       })
     },
     handleSubmit() {
-      var detail = {}
+      // let rs=getStoreData(this.ele.children)
+      // console.log(rs)
+      // return
+
+      // var detail = {}
       try {
-        convertViewData2StoreData(this.ele.more, detail)
-        // this.combineResult(this.ele.more, detail)
+        const detail = getStoreData(this.ele.children)
+        // convertViewData2StoreData(this.ele.more, detail)
+        // // this.combineResult(this.ele.more, detail)
 
         this.handleNewRequest(detail).then(res => {
           // 发送消息通知
@@ -117,34 +135,54 @@ export default {
           //   icon: this.avatorURL,
           //   body: detail.dnei
           // })
-          this.$message.info('提交成功')
+          this.$message({ message: '提交成功', type: 'success' })
           this.$router.replace({ name: 'linkcs_list' })
         })
       } catch (e) {
+        this.$message({ type: 'error', message: e.message, duration: 3000 })
         // console.log(e)
-        this.$message.error({ content: e.message, duration: 3 })
       }
     },
     /**
      * 初始化表单
      */
-    resetData(items) {
+    resetData(item) {
+      let ii = {
+        control: {
+          type: 'layout',
+          children: {
+            'layout': this.$store.getters['linkcs/baseForm']
+          }
+        }
+        // value:'layout'
+      }
+      if (item !== undefined) {
+        ii = fillStoreData(ii, item)
+      }
+
+      // console.log('item')
+      // console.log(item)
+      // console.log('view')
+      // console.log(ii)
+
+      this.$set(this, 'ele', ii)
+      // return
       // var ll = []
       // getFieldsFromViewStruct(clone(this.$store.getters.baseForm), ll)
       // console.log(ll)
-      if (items === undefined) {
-        this.$set(this, 'ele', {
-          title: '',
-          type: 'null',
-          value: null,
-          more: deepClone(this.$store.getters.baseForm) // base_json
-        })
-      } else {
-        // console.log(items)
-        this.$set(this, 'ele', items)
-      }
+      // if (items === undefined) {
+      //   this.$set(this, 'ele', {
+      //     title: '',
+      //     type: 'null',
+      //     value: null,
+      //     more: deepClone(this.$store.getters['linkcs/baseForm']) // base_json
+      //   })
+      // } else {
+      //   // console.log(items)
+      //   this.$set(this, 'ele', items)
+      // }
       // 重置附件
-      if (items === undefined) {
+      if (item === undefined) {
         resetAttchments(0).then(() => {
           // 获取已上传目录
           listUploadedFiles().then(res => {

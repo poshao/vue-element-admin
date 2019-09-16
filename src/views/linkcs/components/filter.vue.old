@@ -1,0 +1,70 @@
+<template>
+  <el-dialog :visible.sync="visible" width="56rem" top="10vh" @close="handleClose('close')">
+    <div slot="title">
+      筛选条件
+      <el-button type="primary" @click="handleClose('confirm')">确定</el-button>
+    </div>
+    <el-form label-width="10em">
+      <MControl :ele="ele" />
+    </el-form>
+  </el-dialog>
+</template>
+
+<script>
+
+// import Container from './container'
+import { getStoreData } from '@/utils/linkcs'
+
+export default {
+  name: 'LinkcsFilter',
+  components: {
+    'MControl': () => import('./mcontrol')
+  },
+  props: {
+    filters: {
+      default() {
+        return {}
+      },
+      type: Object
+    },
+    visible: {
+      default: false,
+      type: Boolean
+    }
+  },
+  data() {
+    return {
+      ele: {
+        filter: true,
+        control: {
+          type: 'layout',
+          children: {
+            'layout': this.$store.getters['linkcs/baseForm']
+          }
+        }
+      }
+    }
+  },
+  methods: {
+    handleClose(action) {
+      if (action === 'confirm') {
+        // console.log(this.search_flex.ele)
+        // console.log(getStoreData(this.search_flex.ele.children))
+        // 转化筛选条件
+        this.$emit('submit', getStoreData(this.ele.children))
+        // this.$emit('submit', this.toFilters())
+        // console.log(JSON.stringify(this.toFilters()))
+      } else {
+        this.$emit('submit', null)
+      }
+      this.visible = false
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+  .filter-select{
+    width:100%;
+  }
+</style>

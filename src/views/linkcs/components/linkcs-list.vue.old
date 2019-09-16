@@ -1,21 +1,28 @@
 <template>
   <div>
+    <el-button-group class="tab-tools">
+      <el-button title="刷新" @click="handleRefresh"><svg-icon icon-class="sync" /></el-button>
+      <el-button title="搜索" @click="handleSearch"><svg-icon icon-class="search" /></el-button>
+      <el-button title="筛选" @click="filterPanel.show=true"><svg-icon icon-class="filter" /></el-button>
+      <el-button title="字段" @click="handleColumnSelect"><svg-icon icon-class="table" /></el-button>
+      <el-button title="下载当前页" @click="handleDownload"><svg-icon icon-class="download" /></el-button>
+    </el-button-group>
     <el-table
       ref="tbl"
-      height="30rem"
+      height="28rem"
       :data="rows"
       border
       @on-row-dblclick="handleDetail"
     >
       <el-table-column type="selection" width="40" />
       <el-table-column prop="id" label="ID" width="80" sortable />
-      <el-table-column label="DN/EI" min-width="120">
+      <el-table-column label="DN/EI" min-width="120" sortable>
         <template slot-scope="{row}">
-          <i v-if="row.has_attachment==='y'" class="fa fa-paperclip" />
+          <svg-icon v-if="row.has_attachment==='y'" icon-class="attachment" />
           {{ row.dnei_v }}
         </template>
       </el-table-column>
-      <el-table-column label="紧急程度" width="80">
+      <el-table-column label="紧急程度" width="110" sortable>
         <template slot-scope="{row}">
           <b v-if="row.level==='normal'" style="color:gray;">Normal</b>
           <b v-else-if="row.level==='grade_a'" style="color:red;">Grade A</b>
@@ -23,36 +30,36 @@
           <b v-else-if="row.level==='grade_c'" style="color:lightblue;">Grade C</b>
         </template>
       </el-table-column>
-      <el-table-column label="状态" width="80">
+      <el-table-column label="状态" width="80" sortable>
         <template slot-scope="{row}">
           <!-- {{ scope.row.status }} -->
           <el-tag v-if="row.status==='pre_send'" type="info">草稿</el-tag>
           <el-tag v-else-if="row.status==='sended'" type="warning">已发送</el-tag>
-          <el-tag v-else-if="row.status==='lock'" type="info">锁定</el-tag>
-          <el-tag v-else-if="row.status==='pass'" type="success">通过</el-tag>
+          <el-tag v-else-if="row.status==='received'" type="info">已接收</el-tag>
+          <!-- <el-tag v-else-if="row.status==='pass'" type="success">通过</el-tag> -->
           <el-popover v-if="row.status==='reject'" trigger="hover" :content="row.reject_reason" placement="top-start">
             <el-tag slot="reference" type="danger">未完成</el-tag>
           </el-popover>
+          <el-tag v-else-if="row.status==='finish'" type="success" hit>完成</el-tag>
           <el-tag v-if="row.status==='resend'" type="warning" hit>已重发</el-tag>
           <el-tag v-else-if="row.status==='cancel'" type="danger" hit>取消</el-tag>
-          <el-tag v-else-if="row.status==='finish'" type="success" hit>完成</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="创建人" width="80">
+      <el-table-column label="创建人" width="90" sortable>
         <template slot-scope="{row}">
           <a href="javascript:void(0)" @click="handleUserDetail(row.creator)">{{ row.creator }}</a>
         </template>
       </el-table-column>
-      <el-table-column prop="create_time" label="创建时间" width="98" />
-      <el-table-column label="受理人" width="80">
+      <el-table-column prop="create_time" label="创建时间" width="110" sortable />
+      <el-table-column label="受理人" width="90" sortable>
         <template slot-scope="{row}">
           <a v-if="row.assign_time!==null" href="javascript:void(0)" @click="handleUserDetail(row.assign)">{{ row.assign }}</a>
         </template>
       </el-table-column>
-      <el-table-column prop="assign_time" label="受理时间" width="98" />
+      <el-table-column prop="assign_time" label="受理时间" width="110" sortable />
 
       <!-- <el-table-column v-for="col in columns" :key="col.key" :prop="col.key" :label="col.title" :width="col.width" /> -->
-      <el-table-column label="操作" width="230">
+      <el-table-column label="操作" width="230" fixed="right">
         <template slot-scope="{row}">
           <el-button-group>
             <el-button
@@ -69,16 +76,21 @@
             <el-button
               v-if="row.status==='sended'"
               type="success"
-              @click="handleLock(row.id)"
-            >锁定</el-button>
+              @click="handleReceive(row.id)"
+            >接收</el-button>
 
-            <el-button
-              v-if="row.status==='lock'"
+            <!-- <el-button
+              v-if="row.status==='received'"
               type="success"
               @click="handleAccept(row.id)"
-            >通过</el-button>
+            >通过</el-button> -->
             <el-button
-              v-if="row.status==='lock'"
+              v-if="row.status==='received'"
+              type="success"
+              @click="handleFinish(row.id)"
+            >完成</el-button>
+            <el-button
+              v-if="row.status==='received'"
               type="danger"
               @click="handleReject(row)"
             >拒绝</el-button>
@@ -94,12 +106,6 @@
               @click="handleResend(row)"
             >重发</el-button>
 
-            <el-button
-              v-if="row.status==='pass'"
-              type="success"
-              @click="handleFinish(row.id)"
-            >完成</el-button>
-
             <el-button type="info" @click="handleDetail(row)">详情</el-button>
 
             <el-button
@@ -114,12 +120,12 @@
     <!-- 分页控件 -->
     <el-pagination
       :current-page.sync="pageSetting.currentPage"
-      :page-sizes="[10, 30, 50, 100]"
+      :page-sizes="[10, 30, 50, 200]"
       :page-size.sync="pageSetting.pageSize"
       layout="prev,next,jumper,sizes"
       :total="pageSetting.total"
-      @size-change="handlePageSizeChange"
-      @current-change="handleCurrentChange"
+      @size-change="handlePageChange"
+      @current-change="handlePageChange"
     />
     <el-dialog :visible.sync="reject.showReason" title="原因">
       <el-input v-model="reject.reason" placeholder="拒绝原因" autofocus @keydown.enter.native="handleRejectReason" />
@@ -134,14 +140,19 @@
       <p>邮箱: {{ userDetail.email }}</p>
       <p>电话: {{ userDetail.phone }}</p>
     </el-dialog>
+    <LinkcsFilter :visible="filterPanel.show" :filters="filterPanel.filters" @submit="handleSubmitFilter" />
   </div>
 </template>
 
 <script>
+
 import { getUserInfo, getUserAvator } from '../../../api/auth'
 
 export default {
   name: 'LinkcsList',
+  components: {
+    'LinkcsFilter': () => import('./filter.vue')
+  },
   props: {
     rows: {
       default() {
@@ -159,6 +170,11 @@ export default {
   },
   data() {
     return {
+      // 筛选条件
+      filterPanel: {
+        show: false,
+        filters: { }
+      },
       // 显示用户信息
       userDetail: {
         show: false,
@@ -176,13 +192,33 @@ export default {
     }
   },
   methods: {
+    handleSubmitFilter(filters) {
+      if (filters !== null) {
+        this.$set(this.filterPanel, 'filters', filters)
+      }
+      console.log(filters)
+      this.filterPanel.show = false
+    },
+    /**
+     * 刷新表格
+     */
+    handleRefresh() {
+
+    },
+    //
+    handleFilter() {
+
+    },
+    /**
+     * 处理下载当前页面
+     */
+    handleDownload() {
+      this.$store.dispatch('linkcs/exportTable', this.rows)
+    },
     /**
      * 处理分页变化
      */
-    handlePageSizeChange(v) {
-      this.$emit('pageChange', this.pageSetting.currentPage, this.pageSetting.pageSize)
-    },
-    handleCurrentChange(v) {
+    handlePageChange(v) {
       this.$emit('pageChange', this.pageSetting.currentPage, this.pageSetting.pageSize)
     },
     /**
@@ -205,15 +241,15 @@ export default {
     /**
      * 处理受理操作
      */
-    handleAccept(id_list) {
-      if (Array.isArray(id_list)) {
-        id_list.forEach(id => {
-          this.$emit('on-accept', id)
-        })
-      } else {
-        this.$emit('on-accept', id_list)
-      }
-    },
+    // handleAccept(id_list) {
+    //   if (Array.isArray(id_list)) {
+    //     id_list.forEach(id => {
+    //       this.$emit('on-accept', id)
+    //     })
+    //   } else {
+    //     this.$emit('on-accept', id_list)
+    //   }
+    // },
     /**
      * 拒绝
      */
@@ -236,8 +272,11 @@ export default {
     handleRevoke(id) {
       this.$emit('on-revoke', id)
     },
-    handleLock(id) {
-      this.$emit('on-lock', id)
+    // handleLock(id) {
+    //   this.$emit('on-lock', id)
+    // },
+    handleReceive(id){
+        this.$emit('on-receive', id)
     },
     handleCancel(id) {
       this.$emit('on-cancel', id)
@@ -255,10 +294,18 @@ export default {
      * 详情
      */
     handleDetail(row) {
-      // console.log(row)
-      // console.log(row.assign)
       this.$emit('on-showDetail', row)
     }
   }
 }
 </script>
+
+<style lang="scss" scoped>
+  .tab-tools{
+    float: right;
+    padding-bottom: 0.5rem;
+  }
+  .dialog-filter{
+    padding:0
+  }
+</style>

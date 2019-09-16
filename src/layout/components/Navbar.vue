@@ -31,6 +31,11 @@
               {{ $t('navbar.profile') }}
             </el-dropdown-item>
           </router-link>
+          <router-link to="/profile/changepassword">
+            <el-dropdown-item>
+              {{ $t('navbar.changePassword') }}
+            </el-dropdown-item>
+          </router-link>
           <router-link to="/">
             <el-dropdown-item>
               {{ $t('navbar.dashboard') }}

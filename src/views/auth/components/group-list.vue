@@ -79,7 +79,7 @@ import {
   linkUserGroup,
   listUsers,
   listUsersByGroup
-} from '../../../api/auth'
+} from '@/api/auth'
 export default {
   name: 'GroupList',
   data() {

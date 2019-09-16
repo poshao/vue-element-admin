@@ -237,11 +237,11 @@ const actions = {
     return new Promise((resolve, reject) => {
       getUserInfo(state.workid).then(res => {
         const data = res.data.userinfo
-        commit('setUsername', data.username)
-        commit('setDepart', data.depart)
-        commit('setAvator', getUserAvator(state.workid))
-        commit('setEmail', data.email)
-        commit('setPhone', data.phone)
+        commit('SET_NAME', data.username)
+        commit('SET_DEPART', data.depart)
+        commit('SET_AVATAR', getUserAvator(state.workid))
+        commit('SET_EMAIL', data.email)
+        commit('SET_PHONE', data.phone)
         resolve(data)
       }).catch(err => {
         reject(err)
@@ -264,10 +264,11 @@ const actions = {
         'phone': userinfo.phone
       }).then(res => {
         // const data = res.data
-        commit('setUsername', userinfo.username)
-        commit('setDepart', userinfo.depart)
-        commit('setEmail', userinfo.email)
-        commit('setPhone', userinfo.phone)
+        console.log('update user: ' + userinfo.username)
+        commit('SET_NAME', userinfo.username)
+        commit('SET_DEPART', userinfo.depart)
+        commit('SET_EMAIL', userinfo.email)
+        commit('SET_PHONE', userinfo.phone)
         resolve()
       }).catch(err => {
         reject(err)

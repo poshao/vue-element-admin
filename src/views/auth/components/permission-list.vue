@@ -10,7 +10,7 @@
 </template>
 
 <script>
-import { listPermissions } from '../../../api/auth'
+import { listPermissions } from '@/api/auth'
 export default {
   name: 'PermissionList',
   data() {

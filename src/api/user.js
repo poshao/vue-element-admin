@@ -18,3 +18,17 @@ export function getInfo(workid) {
 export function logout() {
   return request.delete('auth/v1/tokens')
 }
+
+export function resetPasswordRequest(workid) {
+  return request.post('auth/v1/tasks', {
+    'workid': workid
+  })
+}
+
+export function resetPasswordConfirm(workid, code, password) {
+  return request.post('auth/v1/tasks', {
+    'workid': workid,
+    'code': code,
+    'password': password
+  })
+}

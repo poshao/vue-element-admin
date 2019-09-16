@@ -92,7 +92,7 @@ import {
   linkUserRole,
   linkRolePermission,
   createRole
-} from '../../../api/auth'
+} from '@/api/auth'
 export default {
   name: 'RoleList',
   data() {

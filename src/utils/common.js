@@ -127,6 +127,7 @@ export const quoteValue = (v) => {
   // eslint-disable-next-line no-useless-escape
   if (v === undefined || v === null) return '\"\"'
   if (typeof v === 'boolean') v = String(v)
+  v = v.toString()
   // eslint-disable-next-line no-useless-escape
   return '\"' + v.replace(/\"/g, '\"\"') + '\"'
 }

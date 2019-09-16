@@ -12,12 +12,15 @@ $--color-danger: #ff4949;
 
 $--button-font-weight: 400;
 
-// $--color-text-regular: #1f2d3d;
+$--color-text-regular: #1f2d3d;
+$--input-disabled-color:$--color-text-regular;
 
 $--border-color-light: #dfe4ed;
 $--border-color-lighter: #e6ebf5;
 
 $--table-border:1px solid#dfe6ec;
+
+
 
 /* 穿梭框宽度 */
 $--transfer-panel-width:360px;

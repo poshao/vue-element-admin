@@ -60,7 +60,8 @@ instance.interceptors.response.use((data) => {
     })
   } else {
     Message({
-      message: error.message,
+      // message: error.message,
+      message: error.response.data.error.message,
       type: 'error',
       duration: 5 * 1000
     })

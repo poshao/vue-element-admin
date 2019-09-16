@@ -1,163 +1,224 @@
 <template>
-  <div class="linkcs_list">
-    <el-tabs
-      v-model="activePanel"
-      @tab-click="handleTabClick"
+  <div class="linck_list">
+    <!-- 筛选面板 -->
+    <div style="float:left;">
+      <TableFilter @change="handleFilterChange" />
+      <!-- <el-input v-model="searchText" placeholder="单号快速搜索" clearable style="width:12rem;" @keyup.enter.native="handleQuickSearch" @clear="handleQuickSearch">
+        <i slot="prefix" class="el-input__icon" style="display:inline-block;text-align:center;"><svg-icon icon-class="search" /></i>
+      </el-input> -->
+      <span>|</span>
+      <el-input v-model="quickSearch.orderno" placeholder="单号快速搜索" clearable style="width:12rem;" @keyup.enter.native="handleQuickSearch" @clear="handleQuickSearch">
+        <i slot="prefix" class="el-input__icon" style="display:inline-block;text-align:center;"><svg-icon icon-class="search" /></i>
+      </el-input>
+      <span>|</span>
+
+      <!-- 子筛选条件 -->
+      <el-select v-model="quickSearch.system" placeholder="系统" style="width:8rem" clearable>
+        <el-option key="phx" value="phx" label="PHX" />
+        <el-option key="trim" value="trim" label="TRIM" />
+        <el-option key="mixed" value="mixed" label="Mixed" />
+      </el-select>
+      <el-select v-model="quickSearch.shiptype" placeholder="出货类型" style="width:10rem" clearable>
+        <el-option key="llkk_local" value="llkk_local" label="LLKK Local" />
+        <el-option key="llkk_oversea" value="llkk_oversea" label="LLKK Oversea" />
+        <el-option key="vat_fty" value="vat_fty" label="VAT & FTY" />
+      </el-select>
+      <el-button type="primary" @click="handleQuickSearch">搜索</el-button>
+    </div>
+
+    <div class="tab-tools">
+      <!-- 批量操作按钮 -->
+      <el-dropdown
+        v-if="multiAction.enable"
+        trigger="click"
+        split-button
+        :type="multiAction.cur.type"
+        @click="handleMultiActionClick"
+        @command="handleMultiActionCommand"
+      >
+        {{ multiAction.cur.title }}
+        <el-dropdown-menu slot="dropdown">
+          <el-dropdown-item v-for="(v,k,i) in multiAction.list" :key="i" :command="k" style="margin-bottom:4px;">
+            <span>{{ v.title }}</span>
+          </el-dropdown-item>
+        </el-dropdown-menu>
+      </el-dropdown>
+      <el-button-group>
+        <el-button title="刷新" @click="handleRefresh()"><svg-icon icon-class="sync" /></el-button>
+        <!-- <el-button title="字段" @click="handleColumnSelect"><svg-icon icon-class="table" /></el-button> -->
+        <el-button title="下载当前页" @click="handleDownload"><svg-icon icon-class="download" /></el-button>
+      </el-button-group>
+    </div>
+    <el-table
+      ref="tbl"
+      height="calc(100vh - 14rem)"
+      :data="rows"
+      border
+      @on-row-dblclick="handleDetail"
+      @selection-change="handleSelectChange"
     >
-      <el-tab-pane
-        label="全部订单"
-        name="all"
-      >
-        <!-- 通用筛选条件 -->
-        <div>
-          紧急程度:
-          <el-checkbox v-model="level_all">All</el-checkbox>
-          <el-checkbox v-model="userFilter.level.normal">Normal</el-checkbox>
-          <el-checkbox v-model="userFilter.level.grade_a">Grade A</el-checkbox>
-          <el-checkbox v-model="userFilter.level.grade_b">Grade B</el-checkbox>
-          <el-checkbox v-model="userFilter.level.grade_c">Grade C</el-checkbox>
-        </div>
-        <div>
-          状态:
-          <el-checkbox v-model="status_all">All</el-checkbox>
-          <el-checkbox v-model="userFilter.status.pre_send">草稿</el-checkbox>
-          <el-checkbox v-model="userFilter.status.sended">已发送</el-checkbox>
-          <el-checkbox v-model="userFilter.status.lock">锁定</el-checkbox>
-          <el-checkbox v-model="userFilter.status.pass">通过</el-checkbox>
-          <el-checkbox v-model="userFilter.status.reject">未完成</el-checkbox>
-          <el-checkbox v-model="userFilter.status.cancel">取消</el-checkbox>
-          <el-checkbox v-model="userFilter.status.resend">已重发</el-checkbox>
-          <el-checkbox v-model="userFilter.status.finish">完成</el-checkbox>
-        </div>
-        <div>
-          创建时间:
-          <el-date-picker
-            v-model="userFilter.create_time.start"
-            type="datetime"
-            format="yyyy/MM/dd HH:mm"
-            placeholder="选择开始时间"
-          />-
-          <el-date-picker
-            v-model="userFilter.create_time.end"
-            type="datetime"
-            format="yyyy/MM/dd HH:mm"
-            placeholder="选择结束时间"
-          />
-        </div>
-        <div>
-          单号:
-          <el-input
-            v-model="userFilter.orderno"
-            type="text"
-            style="width:300px"
-          />
-          <el-button
-            type="primary"
-            @click="handleSearch()"
-          >搜索</el-button>
-          <el-button
-            type="default"
-            @click="handleSearch(1)"
-          >重置</el-button>
-        </div>
-        <br>
-        <!-- 表格工具栏 -->
-        <el-button-group style="margin-bottom:2px;">
-          <el-button
-            type="default"
-            @click="handleSearch(1)"
-          >刷新</el-button>
-          <el-button
-            type="info"
-            @click="handleExport()"
-          >导出</el-button>
-        </el-button-group>
-        <LinkcsList
-          :rows="rows"
-          :page-setting="pageSetting"
-          @pageChange="handlePageChange"
-          @on-showDetail="handleShow"
-          @on-edit="handleEdit"
-          @on-revoke="handleRevoke"
-          @on-lock="handleLock"
-          @on-accept="handleAccept"
-          @on-reject="handleReject"
-          @on-cancel="handleCancel"
-          @on-resend="handleResend"
-          @on-finish="handleFinish"
-          @on-copy="handleCopy"
-        />
-      </el-tab-pane>
-      <el-tab-pane
-        label="我创建的订单"
-        name="myRequest"
-      >
-        <LinkcsList
-          :rows="rows"
-          :page-setting="pageSetting"
-          @pageChange="handlePageChange"
-          @on-showDetail="handleShow"
-          @on-lock="handleLock"
-          @on-accept="handleAccept"
-          @on-reject="handleReject"
-          @on-cancel="handleCancel"
-          @on-resend="handleResend"
-          @on-finish="handleFinish"
-        />
-      </el-tab-pane>
-      <el-tab-pane
-        label="我受理的订单"
-        name="myProcess"
-      >
-        <LinkcsList
-          :rows="rows"
-          :page-setting="pageSetting"
-          @pageChange="handlePageChange"
-          @on-showDetail="handleShow"
-          @on-lock="handleLock"
-          @on-accept="handleAccept"
-          @on-reject="handleReject"
-          @on-cancel="handleCancel"
-          @on-resend="handleResend"
-          @on-finish="handleFinish"
-        />
-      </el-tab-pane>
-      <el-tab-pane
-        label="高级筛选"
-        name="advanceFilter"
-      >
-        <AdvanceFilter @on-filter="handleAdvanceFilter" />
-        <LinkcsList
-          :rows="rows"
-          :page-setting="pageSetting"
-          @pageChange="handlePageChange"
-          @on-showDetail="handleShow"
-          @on-lock="handleLock"
-          @on-accept="handleAccept"
-          @on-reject="handleReject"
-          @on-cancel="handleCancel"
-          @on-resend="handleResend"
-          @on-finish="handleFinish"
-        />
-      </el-tab-pane>
-      <!-- <el-tab-pane label="报表设置" name="reportSetting">
-        <ReportSetting></ReportSetting>
-      </el-tab-pane>-->
-    </el-tabs>
+      <el-table-column type="selection" width="40" fixed />
+      <el-table-column prop="id" label="ID" width="60" sortable align="center" />
+      <el-table-column prop="dnei" label="DN/EI" min-width="300" sortable :formatter="(row)=>{return row.dnei_v}">
+        <template slot-scope="{row}">
+          <svg-icon v-if="row.has_attachment==='y'" icon-class="attachment" />
+          {{ row.dnei_v }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="level" label="紧急程度" width="110" sortable :formatter="(row)=>{return row.level}" align="center">
+        <template slot-scope="{row}">
+          <b v-if="row.level==='normal'" style="color:gray;">Normal</b>
+          <b v-else-if="row.level==='grade_a'" style="color:red;">Grade A</b>
+          <b v-else-if="row.level==='grade_b'" style="color:orange;">Grade B</b>
+          <b v-else-if="row.level==='grade_c'" style="color:lightblue;">Grade C</b>
+        </template>
+      </el-table-column>
+      <el-table-column prop="status" label="状态" width="80" sortable align="center">
+        <template slot-scope="{row}">
+          <!-- {{ scope.row.status }} -->
+          <el-tag v-if="row.status==='pre_send'" type="info">草稿</el-tag>
+          <el-tag v-else-if="row.status==='sended'" type="warning">已发送</el-tag>
+          <!-- <el-tag v-else-if="row.status==='lock'" type="info">锁定</el-tag> -->
+          <el-tag v-else-if="row.status==='received'" type="info">已接收</el-tag>
+          <!-- <el-tag v-else-if="row.status==='pass'" type="success">通过</el-tag> -->
+          <el-tag v-else-if="row.status==='finish'" type="success" hit>完成</el-tag>
+          <el-popover v-if="row.status==='reject'" trigger="hover" :content="row.reject_reason" placement="top-start">
+            <el-tag slot="reference" type="danger">未完成</el-tag>
+          </el-popover>
+          <el-tag v-if="row.status==='resend'" type="warning" hit>已重发</el-tag>
+          <el-tag v-else-if="row.status==='cancel'" type="danger" hit>取消</el-tag>
+        </template>
+      </el-table-column>
+
+      <el-table-column
+        prop="system"
+        label="系统"
+        width="90"
+        :formatter="(row)=>{return row.system}"
+        sortable
+      />
+
+      <el-table-column
+        prop="shiptype"
+        label="出货类型"
+        width="100"
+        :formatter="(row)=>{return JSON.parse(row.json_detail).ship_type}"
+        sortable
+        :sort-method="handleShipTypeSort"
+      />
+
+      <el-table-column prop="reject_reason" label="拒绝原因" width="100" :formatter="(row)=>{return row.reject_reason}" />
+
+      <el-table-column prop="creator" label="创建人" width="90" sortable>
+        <template slot-scope="{row}">
+          <a href="javascript:void(0)" @click="handleUserDetail(row.creator)">{{ row.creator }}</a>
+        </template>
+      </el-table-column>
+      <el-table-column prop="create_time" label="创建时间" width="150" sortable :sort-method="handleCreateTimeSort" />
+      <el-table-column prop="assign" label="受理人" width="90" sortable>
+        <template slot-scope="{row}">
+          <a v-if="row.assign_time!==null" href="javascript:void(0)" @click="handleUserDetail(row.assign)">{{ row.assign }}</a>
+        </template>
+      </el-table-column>
+      <el-table-column prop="assign_time" label="受理时间" width="150" sortable :sort-method="handleAssignTimeSort" />
+
+      <!-- <el-table-column v-for="col in columns" :key="col.key" :prop="col.key" :label="col.title" :width="col.width" /> -->
+      <el-table-column label="操作" width="230" fixed="right">
+        <template slot-scope="{row}">
+          <el-button-group>
+            <el-button
+              v-if="row.status==='pre_send'"
+              type="primary"
+              @click="handleEdit(row)"
+            >编辑</el-button>
+
+            <el-button
+              v-if="row.status==='sended'"
+              type="error"
+              @click="handleRevoke(row.id)"
+            >撤销</el-button>
+            <el-button
+              v-if="row.status==='sended'"
+              type="success"
+              @click="handleReceive(row.id)"
+            >接收</el-button>
+            <!--
+            <el-button
+              v-if="row.status==='received'"
+              type="success"
+              @click="handleFinish(row.id)"
+            >通过</el-button> -->
+
+            <el-button
+              v-if="row.status==='received'"
+              type="success"
+              @click="handleFinish(row.id)"
+            >完成</el-button>
+            <el-button
+              v-if="row.status==='received'"
+              type="danger"
+              @click="handleReject(row)"
+            >拒绝</el-button>
+
+            <el-button
+              v-if="row.status==='reject' || row.status==='pre_send' "
+              type="danger"
+              @click="handleCancel(row.id)"
+            >取消</el-button>
+            <el-button
+              v-if="row.status==='reject'"
+              type="primary"
+              @click="handleResend(row)"
+            >重发</el-button>
+
+            <el-button type="info" @click="handleDetail(row)">详情</el-button>
+
+            <el-button
+              v-if="row.status=='finish' || row.status=='cancel' || row.status=='resend'"
+              type="warning"
+              @click="handleCopy(row)"
+            >复制</el-button>
+          </el-button-group>
+        </template>
+      </el-table-column>
+    </el-table>
+    <!-- 分页控件 -->
+    <el-pagination
+      :current-page.sync="pageSetting.currentPage"
+      :page-sizes="[30, 50, 100, 500]"
+      :page-size.sync="pageSetting.pageSize"
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="pageSetting.total"
+      @size-change="handlePageChange"
+      @current-change="handlePageChange"
+    />
+
+    <!-- 拒绝原因 -->
+    <el-dialog :visible.sync="reject.showReason" title="原因">
+      <el-input v-model="reject.reason" placeholder="拒绝原因" autofocus @keydown.enter.native="handleRejectReason" />
+      <div slot="footer">
+        <el-button @click="reject.showReason = false">取 消</el-button>
+        <el-button type="primary" @click="handleRejectReason">确 定</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 用户信息 -->
+    <el-dialog :visible.sync="userDetail.show" title="用户信息" :footer-hide="true">
+      <img :src="userDetail.avatorurl" class="user-avator">
+      <p>用户: {{ userDetail.username }}</p>
+      <p>邮箱: {{ userDetail.email }}</p>
+      <p>电话: {{ userDetail.phone }}</p>
+    </el-dialog>
 
     <!-- 详情呈现 -->
-    <el-dialog
-      :visible.sync="showDetail"
-      :title="'订单明细 - '+selectedDetail.id"
-      width="60"
-    >
+    <el-dialog :visible.sync="showDetail" :title="'订单明细 - '+selectedDetail.id" width="60">
       <el-form
         ref="detail"
         :label-width="80"
         readonly
         style="max-height:600px;overflow-y:auto;"
       >
-        <Container
+        <MControl
           :ele="ele"
           :readonly="true"
         />
@@ -167,88 +228,89 @@
             v-for="item in selectedDetail.files"
             :key="item"
             href="javascript:void(0)"
-            @click="handleDownload(item.name,item.hashname)"
+            @click="handleDownloadAttachment(item.name,item.hashname)"
           >
             <li>{{ item.name }}</li>
           </a>
         </ul>
       </el-form>
-      <!-- <el-button
-        type="info"
-        style="width:100%;"
-        @click="handleResend(ele)"
-      >新建</el-button> -->
     </el-dialog>
   </div>
 </template>
 
 <script>
-import { mapActions } from 'vuex'
-import {
-  clone,
-  convertJson2Csv,
-  downloadFile,
-  downloadFile2,
-  datetimeFormat
-} from '@/utils/common'
+import { deepClone } from '@/utils/index'
+import { getUserInfo, getUserAvator } from '@/api/auth'
+import { createNamespacedHelpers } from 'vuex'
+const { mapActions } = createNamespacedHelpers('linkcs')
+import { fillStoreData } from '@/utils/linkcs'
 import {
   listRequest,
-  getFile,
-  convertStoreData2ViewData,
-  convertStore2Report,
-  getFieldsFromViewStruct,
   resetAttchments
 } from '@/api/linkcs'
-
-import {
-  getUserAvator
-  // getSocketId
-} from '../../api/auth'
+import { isArray } from 'util'
 
 export default {
+  name: 'LinkcsList',
   components: {
-    'Container': () => import('./components/container.vue'),
-    'LinkcsList': () => import('./components/linkcs-list'),
-    // 'ReportSetting': () => import('./components/report-setting.vue'),
-    'AdvanceFilter': () => import('./components/advance-filter.vue')
+    'MControl': () => import('./components/mcontrol'),
+    'TableFilter': () => import('./components/table-filter')
   },
   data() {
     return {
+      // 批量操作
+      multiAction: {
+        cur: {
+          cmd: 'recv',
+          title: '批量接收',
+          type: 'success'
+        },
+        selection_id: [],
+        list: {
+          'undo': { title: '批量撤销', type: 'default' },
+          'recv': { title: '批量接收', type: 'success' },
+          'cancel': { title: '批量取消', type: 'danger' },
+          'finish': { title: '批量完成', type: 'success' }
+        },
+        title: '接收',
+        type: 'primary',
+        enable: false
+      },
 
+      // 当前筛选条件
+      activeFilter: null,
+      // 子筛选条件
+      quickSearch: {
+        system: '',
+        shiptype: '',
+        // 快速搜索
+        orderno: ''
+      },
+
+      // 显示用户信息
+      userDetail: {
+        show: false,
+        username: '',
+        email: '',
+        phone: '',
+        avatorurl: ''
+      },
+      // 拒绝控制
+      reject: {
+        showReason: false,
+        reason: '',
+        rows: []
+      },
       // 分页设置
       pageSetting: {
         total: 1000,
         pageSize: 10,
         currentPage: 1
       },
-      // 筛选条件
-      userFilter: {
-        level: {
-          normal: true,
-          grade_a: true,
-          grade_b: true,
-          grade_c: true
-        },
-        status: {
-          pre_send: true,
-          sended: true,
-          lock: true,
-          pass: true,
-          reject: true,
-          cancel: true,
-          resend: true,
-          finish: true
-        },
-        create_time: {
-          start: '',
-          end: ''
-        },
-        orderno: ''
-      },
 
-      // 列表请求配置
-      list_option: {
-      },
+      // // 列表请求配置
+      // list_option: {
+      // },
 
       ele: {},
       selectedDetail: {},
@@ -257,403 +319,172 @@ export default {
       // 列表加载标识
       loading: false,
       // 列表明细
-      rows: [],
-      activePanel: 'all'
+      rows: []
     }
-  },
-  computed: {
-    // ...mapGetters(['notify']),
-    'level_all': {
-      get() {
-        return this.userFilter.level.normal &&
-          this.userFilter.level.grade_a &&
-          this.userFilter.level.grade_b &&
-          this.userFilter.level.grade_c
-      },
-      set(v) {
-        this.userFilter.level.normal = v
-        this.userFilter.level.grade_a = v
-        this.userFilter.level.grade_b = v
-        this.userFilter.level.grade_c = v
-      }
-    },
-    'status_all': {
-      get() {
-        return this.userFilter.status.pre_send &&
-          this.userFilter.status.sended &&
-          this.userFilter.status.lock &&
-          this.userFilter.status.pass &&
-          this.userFilter.status.reject &&
-          this.userFilter.status.cancel &&
-          this.userFilter.status.resend &&
-          this.userFilter.status.finish
-      },
-      set(v) {
-        this.userFilter.status.pre_send = v
-        this.userFilter.status.sended = v
-        this.userFilter.status.lock = v
-        this.userFilter.status.pass = v
-        this.userFilter.status.reject = v
-        this.userFilter.status.cancel = v
-        this.userFilter.status.resend = v
-        this.userFilter.status.finish = v
-      }
-    }
-    // ...mapGetters(['notify'])
-    // ...mapState({ notify: state => state.linkcs.notify })
   },
   mounted() {
-    // 初始化通知组件
-    // console.log(this.notify)
-
-    // 消息处理
-    // this.notify.addEventListener('message', this.handleNotify)
-
-    this.handleRefresh()
-  },
-  beforeDestroy() {
-    // 卸载通知组件
-    // this.notify.removeEventListener('message', this.handleNotify)
+    // if(this.$route.query!==undefined){
+    // console.log(this.$route.query)
+    this.handleRefresh(this.$route.query.orderid)
+    // }else{
+    //   this.handleRefresh()
+    // }
   },
   methods: {
     ...mapActions([
       'handleListRequest',
-      'handleAcceptOrder',
+      // 'handleAcceptOrder',
       'handleRejectOrder',
       'handleCancelOrder',
       'handleFinishOrder',
-      'handleLockOrder',
+      // 'handleLockOrder',
+      'handleReceiveOrder',
       'handleRevokeOrder'
     ]),
-    /**
-     * 处理通知
-     */
-    handleNotify(event) {
-      var data = JSON.parse(event.data)
-      switch (data.action) {
-        case 'request':
-          this.handleRefresh()
+    // 批量操作处理
+    handleMultiActionClick() {
+      var ids = this.multiAction.selection_id
+      switch (this.multiAction.cur.cmd) {
+        case 'undo':
+          this.handleRevoke(ids)
           break
-        case 'accept':
-          this.handleRefresh()
+        case 'recv':
+          this.handleReceive(ids)
           break
-        case 'lock':
-          // 消息通知
-          console.log('lock')
-          if (Notification.permission === 'granted') {
-            // eslint-disable-next-line no-new
-            new Notification('通知', {
-              body: data.params.content,
-              // tag: '2ue',
-              icon: getUserAvator(data.params.workid),
-              timestamp: 3000
-            })
-          } else if (Notification.permission !== 'denied') {
-            Notification.requestPermission(function(permission) {
-              // 如果用户同意，就可以向他们发送通知
-              if (permission === 'granted') {
-                // eslint-disable-next-line no-new
-                new Notification('通知', {
-                  body: data.params.content,
-                  // tag: '2ue',
-                  icon: getUserAvator(data.params.workid),
-                  timestamp: 3000
-                })
-              }
-            })
-          }
+        case 'cancel':
+          this.handleCancel(ids)
+          break
+        case 'finish':
+          this.handleFinish(ids)
           break
       }
     },
+    handleMultiActionCommand(v) {
+      this.multiAction.cur.cmd = v
+      this.multiAction.cur.title = this.multiAction.list[v].title
+      this.multiAction.cur.type = this.multiAction.list[v].type
+      // this.handleMultiActionClick()
+    },
+    handleSelectChange(v) {
+      this.multiAction.enable = false
+      if (v.length > 0) {
+        this.multiAction.enable = true
+      }
+
+      this.multiAction.selection_id = []
+      v.forEach(v2 => {
+        this.multiAction.selection_id.push(v2.id)
+      })
+      // this.multiAction.selection=v
+    },
+    // 字段排序
+    handleShipTypeSort(a, b) {
+      const s1 = JSON.parse(a.json_detail).ship_type
+      const s2 = JSON.parse(b.json_detail).ship_type
+      if (s1 < s2) return -1
+      if (s1 > s2) return 1
+      return 0
+    },
+    handleCreateTimeSort(a, b) {
+      if (a.create_time === null) {
+        return -1
+      }
+      if (b.create_time === null) {
+        return 1
+      }
+      return new Date(a.create_time) - new Date(b.create_time)
+    },
+    handleAssignTimeSort(a, b) {
+      if (a.assign_time === null) {
+        return -1
+      }
+      if (b.assign_time === null) {
+        return 1
+      }
+      return new Date(a.assign_time) - new Date(b.assign_time)
+    },
     /**
-     * 处理分页变化
+     * 筛选事件响应
      */
-    handlePageChange(curpage, pagesize) {
+    handleFilterChange(filter) {
+      // 解析筛选条件 并 刷新列表
+
+      // console.log(filter)
+      if (filter === null) {
+        this.activeFilter = null
+      } else {
+        const filters = {
+          and: []
+        }
+        for (const key in filter.condition) {
+          filters.and.push(filter.condition[key])
+        }
+        this.activeFilter = filters
+      }
+      this.pageSetting.currentPage = 1
+      this.handleRefresh()
+
+      // console.log('filter change')
+      // console.log(filter)
+    },
+    /**
+     * 搜索事件响应
+     */
+    handleQuickSearch() {
+      this.pageSetting.currentPage = 1
       this.handleRefresh()
     },
     /**
-     * 获取文件的URL路径
-     */
-    handleDownload(filename, hashname) {
-      getFile(filename, hashname).then(res => {
-        downloadFile2(res)
-      })
-      // return getFileLink(filename, hashname)
-    },
-    // 处理高级筛选
-    handleAdvanceFilter(filters) {
-      // console.log('advance')
-      // console.log(filters)
-      var option = {}
-      option.filters = []
-      for (var key in filters) {
-        var item = filters[key]
-        option.filters.push({
-          key: item.field,
-          operator: item.operator,
-          value: item.value
-        })
-      }
-      this.handleRefresh(option)
-    },
-    // 处理重发
-    handleResend(row) {
-      resetAttchments(row.id).then(() => {
-        var detail = JSON.parse(row.json_detail)
-        detail.id = row.id
-        detail.creator = row.creator
-        detail.create_time = row.create_time
-        detail.dnei = row.dnei
-        detail.level = row.level
-        detail.system = row.system
-
-        var items = {
-          title: '',
-          type: 'null',
-          value: null,
-          more: clone(this.$store.getters.baseForm) // base_json
-        }
-        convertStoreData2ViewData(items.more, detail)
-
-        // 添加订单号(标记重发)
-        items.more.push({ 'id': 'parentid', 'value': detail.id })
-        this.$router.push({ name: 'cs_new_request', params: { items: items }})
-      })
-    },
-    // 处理复制
-    handleCopy(row) {
-      resetAttchments(row.id).then(() => {
-        var detail = JSON.parse(row.json_detail)
-        detail.id = row.id
-        detail.creator = row.creator
-        detail.create_time = row.create_time
-        detail.dnei = row.dnei
-        detail.level = row.level
-        detail.system = row.system
-
-        var items = {
-          title: '',
-          type: 'null',
-          value: null,
-          more: clone(this.$store.getters.baseForm) // base_json
-        }
-        convertStoreData2ViewData(items.more, detail)
-
-        // 添加订单号(标记重发)
-        // items.more.push({ 'id': 'parentid', 'value': detail.id })
-        this.$router.push({ name: 'cs_new_request', params: { items: items }})
-      })
-    },
-    // 处理选项卡切换
-    handleTabClick(instance) {
-      var option = {}
-      switch (this.activePanel) {
-        case 'all':
-          this.handleRefresh()
-          break
-        case 'myRequest':// 我请求的订单
-          option.filters = [{
-            operator: 'in',
-            key: 'creator',
-            value: this.$store.state.user.workid
-          }]
-          break
-        case 'myProcess':// 我受理的订单
-          option.filters = [{
-            operator: 'in',
-            key: 'assign',
-            value: this.$store.state.user.workid
-          }]
-          break
-      }
-      this.handleRefresh(option)
-    },
-    // 处理筛选任务
-    handleSearch(reset) {
-      // 重置查询
-      if (reset !== undefined) {
-        this.status_all = true
-        this.level_all = true
-        this.userFilter.create_time.start = ''
-        this.userFilter.create_time.end = ''
-        this.userFilter.orderno = ''
-      }
-
-      var levelValues = []
-      for (var level_key in this.userFilter.level) {
-        if (this.userFilter.level[level_key]) {
-          levelValues.push(level_key)
-        }
-      }
-      var statusValues = []
-      for (var status_key in this.userFilter.status) {
-        if (this.userFilter.status[status_key]) {
-          statusValues.push(status_key)
-        }
-      }
-      var option = {}
-      option.filters = [{
-        operator: 'in',
-        key: 'level',
-        value: levelValues
-      }, {
-        operator: 'in',
-        key: 'status',
-        value: statusValues
-      }]
-      if (this.userFilter.create_time.start !== '') {
-        option.filters.push({
-          operator: '>=',
-          key: 'create_time',
-          value: datetimeFormat(this.userFilter.create_time.start, 'yyyy/MM/dd hh:mm:ss')
-        })
-      }
-      if (this.userFilter.create_time.end !== '') {
-        option.filters.push({
-          operator: '<=',
-          key: 'create_time',
-          value: datetimeFormat(this.userFilter.create_time.end, 'yyyy/MM/dd hh:mm:ss')
-        })
-      }
-      if (this.userFilter.orderno !== '') {
-        option.filters.push({
-          operator: 'like',
-          key: 'dnei',
-          value: this.userFilter.orderno
-        })
-      }
-      this.loading = true
-      this.handleRefresh(option)
-    },
-    /**
-     * 文件导出
-     */
-    handleExport() {
-      // 抽离表格数据
-      var mRows = []
-      this.rows.forEach(v => {
-        var row = {}
-        convertStore2Report(JSON.parse(v.json_detail), clone(this.$store.getters.baseForm), row)
-        // 增加时间等项
-        row['dnei'] = v.dnei
-        row['system'] = v.system
-        row['level'] = v.level
-        row['create_time'] = v.create_time
-        row['assign_time'] = v.assign_time
-        row['creator'] = v.creator
-        row['assign'] = v.assign
-        row['status'] = v.status
-        row['reject_reason'] = v.reject_reason
-        // 处理附件链接
-        // var tmp_files = JSON.parse(v.json_detail).files
-        // var tmp_fs = []
-        // if (tmp_files) {
-        //   tmp_files.forEach((v, k) => {
-        //     tmp_fs.push(getFileLink(v.name, v.hashname))
-        //   })
-        // }
-        // row['files'] = tmp_fs.join('\n')
-        mRows.push(row)
-      })
-
-      // console.log(mRows)
-      // 导出结构声明
-      // var reportStruct = ['create_time', 'level', 'system', 'dnei', 'si_text', 'paytype', 'files']
-      // 导出所有字段
-      var reportStruct = ['create_time', 'assign_time', 'creator', 'assign']
-      var dd = {}
-      getFieldsFromViewStruct(this.$store.getters.baseForm, dd)
-      for (var key in dd) {
-        reportStruct.push(key)
-      }
-      // 转化成CSV
-      var blob = convertJson2Csv(mRows, reportStruct)
-      // 下载文件
-      var filename = 'linkcs_report_' + new Date().getTime() + '.csv'
-      downloadFile(blob, filename)
-    },
-    // handleTest (hid) {
-    //   let option = {}
-    //   switch (hid) {
-    //     case 1:// 我的订单
-    //       option.filters = [{
-    //         operator: '=',
-    //         key: 'creator',
-    //         value: '8123456'
-    //       }]
-    //       break
-    //     case 2:// 未处理订单
-    //       option.filters = [{
-    //         operator: '=',
-    //         key: 'status',
-    //         value: 'unknow'
-    //       }]
-    //       break
-    //     case 3:// 分页测试
-    //       option.page = {
-    //         index: 1,
-    //         count: 5
-    //       }
-    //       break
-    //     case 4:// 虚拟列
-    //       option.filters = [{
-    //         operator: '=',
-    //         key: 'type',
-    //         value: 'self_collect'
-    //       }]
-    //       break
-    //     case 5:// 排序
-    //       option.sorts = [{
-    //         key: 'system',
-    //         order: 'desc'
-    //       }, {
-    //         key: 'id',
-    //         order: 'asc'
-    //       }]
-    //       break
-    //     case 6:
-    //       option.filters = [{
-    //         operator: '=',
-    //         key: 'status',
-    //         value: 'unknow'
-    //       }, {
-    //         operator: 'in',
-    //         key: 'id',
-    //         value: [10, 11, 12, 13, 14, 15]
-    //       }]
-    //       option.sorts = [{
-    //         key: 'system',
-    //         order: 'desc'
-    //       }, {
-    //         key: 'id',
-    //         order: 'asc'
-    //       }]
-    //       break
-    //   }
-    //   this.loading = true
-    //   this.handleRefresh(option)
-    // },
-    /**
      * 刷新列表
      */
-    handleRefresh(option) {
+    handleRefresh(orderid) {
       this.loading = true
       // console.log('开始刷新')
       // console.log(new Date())
 
-      // 分页设置
-      if (option === undefined) {
-        option = {}
-      }
-      // 默认id倒序
-      option.sorts = [
-        { key: 'id', order: 'desc' }
-      ]
-      option.page = {
-        index: this.pageSetting.currentPage - 1,
-        count: this.pageSetting.pageSize
-      }
+      const option = {}
 
+      if (orderid !== undefined) {
+        option.filter = {
+          and: [
+            { key: 'id', op: '=', val: orderid }
+          ]
+        }
+      } else {
+        if (this.$route.query.orderid !== undefined) {
+          this.$router.replace({ name: 'linkcs_list' })
+        }
+        // 添加筛选条件
+        if (this.activeFilter !== null) {
+          option.filter = deepClone(this.activeFilter)
+        }
+
+        // 添加搜索条件
+        if (option.filter === undefined) {
+          option.filter = { and: [] }
+        }
+        if (this.quickSearch.orderno !== '') {
+          option.filter.and.push({ key: 'dnei', op: 'like', val: this.quickSearch.orderno })
+        }
+        if (this.quickSearch.system !== '') {
+          option.filter.and.push({ key: 'system', op: '=', val: this.quickSearch.system })
+        }
+        if (this.quickSearch.shiptype !== '') {
+          option.filter.and.push({ key: 'ship_type', op: '=', val: this.quickSearch.shiptype })
+        }
+
+        // 添加分页设置
+        option.pagebreak = {
+          index: this.pageSetting.currentPage - 1,
+          size: this.pageSetting.pageSize
+        }
+
+        // 添加排序设置
+        option.sort = {
+          id: 'desc'
+        }
+      }
+      // 结果渲染
       listRequest(option).then(res => {
         // this.handleListRequest(option).then(res => {
         // console.log(res)
@@ -682,10 +513,133 @@ export default {
         // console.log(new Date())
       })
     },
+
     /**
-     * 处理编辑(编辑完成后需要更新)
+     * 处理下载当前页面
      */
-    handleEdit(row) {
+    handleDownload() {
+      this.$store.dispatch('linkcs/exportTable', this.rows)
+    },
+    /**
+     * 处理分页变化
+     */
+    handlePageChange(v) {
+      // this.$emit('pageChange', this.pageSetting.currentPage, this.pageSetting.pageSize)
+      this.handleRefresh()
+    },
+    /**
+     * 处理显示用户详情
+     */
+    handleUserDetail(workid) {
+      this.userDetail.show = false
+      this.userDetail.username = ''
+      this.userDetail.email = ''
+      this.userDetail.phone = ''
+      this.userDetail.avatorurl = getUserAvator(workid)
+      getUserInfo(workid).then(res => {
+        const data = res.data.userinfo
+        this.userDetail.username = data.username
+        this.userDetail.email = data.email
+        this.userDetail.phone = data.phone
+        this.userDetail.show = true
+      })
+    },
+    /**
+     * 处理受理操作
+     */
+    // handleAccept(id) {
+    //   this.handleAcceptOrder(id).then(res => {
+    //     this.handleRefresh()
+    //   })
+    // },
+    /**
+     * 拒绝
+     */
+    handleReject(row) {
+      this.reject.rows = []
+      this.reject.rows.push(row)
+      this.reject.reason = ''
+      this.reject.showReason = true
+    },
+    handleRejectReason() {
+      const reason = this.reject.reason
+      this.reject.rows.forEach(row => {
+      // 提示输入原因
+        this.handleRejectOrder({ 'orderid': row.id, 'reason': reason }).then(res => {
+          this.handleRefresh()
+        })
+        // this.$emit('on-reject', Object.assign({ 'reason': reason }, row))
+        this.reject.showReason = false
+      })
+    },
+    handleRevoke(id) {
+      if (!isArray(id)) {
+        id = [id]
+      }
+      var ps = []
+      id.forEach(v => {
+        ps.push(this.handleRevokeOrder(v))
+      })
+      Promise.all(ps).finally(res => {
+        this.handleRefresh()
+      })
+    },
+    // handleLock(id) {
+    //   // this.$emit('on-lock', id)
+    //   this.handleLockOrder(id).then(res => {
+    //     this.handleRefresh()
+    //   })
+    // },
+    handleReceive(id) {
+      if (!isArray(id)) {
+        id = [id]
+      }
+      var ps = []
+      id.forEach(v => {
+        ps.push(this.handleReceiveOrder(v))
+      })
+      Promise.all(ps).finally(res => {
+        this.handleRefresh()
+      })
+    },
+    handleCancel(id) {
+      if (!isArray(id)) {
+        id = [id]
+      }
+      var ps = []
+      id.forEach(v => {
+        ps.push(this.handleCancelOrder(v))
+      })
+      Promise.all(ps).finally(res => {
+        this.handleRefresh()
+      })
+    },
+    handleFinish(id) {
+      if (!isArray(id)) {
+        id = [id]
+      }
+      var ps = []
+      id.forEach(v => {
+        ps.push(this.handleFinishOrder(v))
+      })
+      Promise.all(ps).finally(res => {
+        this.handleRefresh()
+      })
+    },
+    handleResend(row) {
+      // this.$emit('on-resend', row)
+      resetAttchments(row.id).then(() => {
+        var detail = JSON.parse(row.json_detail)
+        detail.id = row.id
+        detail.creator = row.creator
+        detail.create_time = row.create_time
+        detail.dnei = row.dnei
+        detail.level = row.level
+        detail.system = row.system
+        this.$router.push({ name: 'cs_new_request', params: { items: detail }})
+      })
+    },
+    handleCopy(row) {
       resetAttchments(row.id).then(() => {
         var detail = JSON.parse(row.json_detail)
         detail.id = row.id
@@ -695,76 +649,31 @@ export default {
         detail.level = row.level
         detail.system = row.system
 
-        var items = {
-          title: '',
-          type: 'null',
-          value: null,
-          more: clone(this.$store.getters.baseForm) // base_json
-        }
-        convertStoreData2ViewData(items.more, detail)
-
-        // 添加订单号(标记编辑)
-        items.more.push({ 'id': 'parentid', 'value': detail.id })
-        this.$router.push({ name: 'cs_new_request', params: { items: items, type: 'update' }})
+        this.$router.push({ name: 'cs_new_request', params: { items: detail }})
       })
     },
     /**
-     * 撤销订单
+     * 处理编辑(编辑完成后需要更新)
      */
-    handleRevoke(id) {
-      this.handleRevokeOrder(id).then(() => {
-        this.handleRefresh()
-      })
-    },
-    handleLock(id) {
-      this.handleLockOrder(id).then(res => {
-        // this.notify.sendMessage('linkcs', 'lock', {
-        //   workid: this.$store.state.user.workid, content: 'shipment id ' + id
-        // })
-        this.handleRefresh()
-      })
-    },
-    handleAccept(id) {
-      this.handleAcceptOrder(id).then(res => {
-        // this.notify.sendMessage('linkcs', 'accept', id)
-        this.handleRefresh()
-      })
-    },
-    handleReject(row) {
-      // console.log(row)
-      // var reason = 'test'
-      // 提示输入原因
-      // var notify = this.notify
-      // console.log(notify)
-      // var username = this.$store.state.user.username
-      this.handleRejectOrder({ 'orderid': row.id, 'reason': row.reason }).then(res => {
-        // getSocketId(row.creator).then(res => {
-        //   var sendlist = res.data.list
+    handleEdit(row) {
+      // this.$emit('on-edit', row)
+      resetAttchments(row.id).then(() => {
+        var detail = JSON.parse(row.json_detail)
+        detail.id = row.id
+        detail.creator = row.creator
+        detail.create_time = row.create_time
+        detail.dnei = row.dnei
+        detail.level = row.level
+        detail.system = row.system
 
-        //   // 发送通知
-        //   notify.sendex('linkcs', 'post', sendlist,
-        //     {
-        //       icon: getUserAvator(this.$store.state.user.workid),
-        //       title: row.dnei + '(' + row.id + ')',
-        //       body: username + ' => ' + row.reason,
-        //       orderid: row.id,
-        //       reason: row.reason,
-        //       username: username
-        //     }
-        //   )
-        // })
-        this.handleRefresh()
+        this.$router.push({ name: 'cs_new_request', params: { items: detail, type: 'update' }})
       })
     },
-    handleCancel(id) {
-      this.handleCancelOrder(id)
-      this.handleRefresh()
-    },
-    handleFinish(id) {
-      this.handleFinishOrder(id)
-      this.handleRefresh()
-    },
-    handleShow(selectedRow) {
+    /**
+     * 详情
+     */
+    handleDetail(selectedRow) {
+      // this.$emit('on-showDetail', row)
       // 加载提交用户及时间信息
       // 加载附件列表
       // 加载受理状态等信息
@@ -773,51 +682,54 @@ export default {
       if (selectedRow.assign_time === null) {
         selectedRow.assign = ''
       }
-
-      this.selectedDetail = JSON.parse(selectedRow.json_detail)
-
-      this.selectedDetail.id = selectedRow.id
-      this.selectedDetail.creator = selectedRow.creator
-      this.selectedDetail.create_time = selectedRow.create_time
-      this.selectedDetail.dnei = selectedRow.dnei
-      this.selectedDetail.level = selectedRow.level
-      this.selectedDetail.system = selectedRow.system
-
-      this.ele = {
-        title: '',
-        type: 'null',
-        value: null,
-        more: clone(this.$store.getters.baseForm) // base_json
+      var detail = JSON.parse(selectedRow.json_detail)
+      detail.id = selectedRow.id
+      detail.creator = selectedRow.creator
+      detail.create_time = selectedRow.create_time
+      detail.dnei = selectedRow.dnei
+      detail.level = selectedRow.level
+      detail.system = selectedRow.system
+      detail.reject_reason = selectedRow.reject_reason
+      this.selectedDetail = detail
+      let control = {
+        readonly: true,
+        control: {
+          type: 'layout',
+          children: {
+            'layout': this.$store.getters['linkcs/baseForm']
+          }
+        }
       }
-      convertStoreData2ViewData(this.ele.more, this.selectedDetail)
-      // 添加状态信息
-      var detail = [{
-        id: 'undefined', required: false, type: 'textbox', title: '创建人', value: selectedRow.creator
-      }, {
-        id: 'undefined', required: false, type: 'textbox', title: '受理人', value: selectedRow.assign
-      }, {
-        id: 'undefined', required: false, type: 'textbox', title: '创建时间', value: selectedRow.create_time
-      }, {
-        id: 'undefined', required: false, type: 'textbox', title: '状态', value: selectedRow.status
-      }, {
-        id: 'undefined', required: false, type: 'areatext', title: '原因', value: selectedRow.reject_reason
-      }
-      ]
-      this.ele.more = detail.concat(this.ele.more)
+
+      control = fillStoreData(control, detail)
+
       // 刷新界面
-      this.$set(this, 'ele', this.ele)
+      this.$set(this, 'ele', control)
 
       this.showDetail = true
       this.$nextTick(() => {
         this.$refs['detail'].$el.scrollTop = 0
       })
+    },
+    /**
+     * 获取文件的URL路径
+     */
+    handleDownloadAttachment(filename, hashname) {
+      this.$store.dispatch('linkcs/downloadAttachment', { filename: filename, hashname: hashname })
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-  .linkcs_list {
-    margin: 26px;
+  .tab-tools{
+    float: right;
+    padding-bottom: 0.5rem;
+  }
+  .dialog-filter{
+    padding:0
+  }
+  .linck_list{
+    margin: 20px;
   }
 </style>

@@ -45,14 +45,53 @@ export const constantRoutes = [
     ]
   },
   {
+    path: '/auth-redirect',
+    component: () => import('@/views/login/auth-redirect'),
+    hidden: true
+  },
+
+  {
     path: '/login',
     component: () => import('@/views/login/index'),
     hidden: true
   },
   {
-    path: '/auth-redirect',
-    component: () => import('@/views/login/auth-redirect'),
-    hidden: true
+    path: '/',
+    component: Layout,
+    redirect: '/linkcs',
+    children: [
+      {
+        name: 'dashboard',
+        path: 'dashboard',
+        component: () => import('@/views/dashboard/index.vue'),
+        meta: {
+          title: 'dashboard',
+          icon: 'dashboard',
+          noCache: true,
+          affix: true
+        }
+      }
+    ]
+  },
+  {
+    path: '/profile',
+    component: Layout,
+    redirect: '/profile/index',
+    hidden: true,
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/profile/setting'),
+        name: 'Profile',
+        meta: { title: 'profile', icon: 'user', noCache: true }
+      },
+      {
+        path: 'changepassword',
+        component: () => import('@/views/profile/change_password'),
+        name: 'ChangePassword',
+        meta: { title: 'changePassword', icon: 'lock', noCache: true }
+      }
+    ]
   },
   {
     path: '/404',
@@ -64,16 +103,22 @@ export const constantRoutes = [
     component: () => import('@/views/error-page/401'),
     hidden: true
   },
-  {
-    path: '',
-    redirect: 'linkcs'
-  },
+
+  /**
+   * 应用路由
+   */
   {
     path: '/linkcs',
     component: Layout,
     redirect: '/linkcs/list',
-    meta: { title: 'linkcs', icon: 'chart' },
+    meta: { title: 'linkcs', icon: 'thunderbolt' },
     children: [
+      {
+        path: 'status',
+        component: () => import('@/views/linkcs/status'),
+        name: 'linkcs_status',
+        meta: { title: 'linkcs_status' }
+      },
       {
         path: 'create',
         component: () => import('@/views/linkcs/create'),
@@ -97,7 +142,7 @@ export const constantRoutes = [
         path: 'summary',
         component: () => import('@/views/auth/summary'),
         name: 'auth_summary',
-        meta: { title: 'auth_summary', icon: 'people' }
+        meta: { title: 'auth_summary', icon: 'team' }
       }]
   },
   {
@@ -113,23 +158,24 @@ export const constantRoutes = [
       }
     ]
   },
+
   {
-    path: '/profile',
+    path: '/about',
     component: Layout,
-    redirect: '/profile/index',
-    hidden: true,
-    children: [
-      {
-        path: 'index',
-        component: () => import('@/views/auth/setting'),
-        // component: () => import('@/views/profile/index'),
-        name: 'Profile',
-        meta: { title: 'profile', icon: 'user', noCache: true }
+    redirect: '/about/index',
+    children: [{
+      name: 'about',
+      path: 'index',
+      component: () => import('@/views/about/update.md'),
+      meta: {
+        title: 'about',
+        icon: 'info-circle'
       }
-    ]
+    }]
   }
 ]
 
+// 动态路由
 export const asyncRoutes = []
 
 const createRouter = () => new Router({
