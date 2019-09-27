@@ -331,8 +331,8 @@ var base_json = [{
                     title: 'Duty&Tax付款',
                     type: 'combobox',
                     option: {
-                      'prepaid': {
-                        label: 'Prepaid'
+                      'collect': {
+                        label: 'Collect'
                       },
                       '3rd': {
                         label: '3rd'
@@ -346,12 +346,13 @@ var base_json = [{
                           type: 'textbox'
                           // require: false
                         }
-                        // {
-                        //   id: 'dt_accountmore',
-                        //   title: 'Duty&Tax A/C# More',
-                        //   type: 'textbox',
-                        //   require: false
-                        // }
+                      ],
+                      'collect': [
+                        {
+                          id: 'dt_account',
+                          title: 'Duty&Tax A/C#',
+                          type: 'textbox'
+                        }
                       ]
                     }
                   }
@@ -388,13 +389,7 @@ var base_json = [{
                   {
                     id: 'account',
                     title: 'A/C#',
-                    type: 'textbox',
-                    require: false
-                  }, {
-                    id: 'dt_accountmore',
-                    title: 'Duty&Tax A/C# More',
-                    type: 'textbox',
-                    require: false
+                    type: 'textbox'
                   }
                 ]
               }
@@ -430,12 +425,11 @@ var base_json = [{
                         {
                           id: 'dt_account',
                           title: 'Duty&Tax A/C#',
-                          type: 'textbox',
-                          require: false
+                          type: 'textbox'
                         },
                         {
-                          id: 'dt_accountmore',
-                          title: 'Duty&Tax A/C# More',
+                          id: 'dt_accountinfo',
+                          title: 'Duty&Tax A/C# Info',
                           type: 'textbox',
                           require: false
                         }
@@ -561,12 +555,12 @@ var base_json = [{
                   {
                     id: 'account',
                     title: 'A/C#',
+                    type: 'textbox'
+                  }, {
+                    id: 'account_more',
+                    title: 'A/C# Info',
                     type: 'textbox',
                     require: false
-                  }, {
-                    id: 'dt_accountmore',
-                    title: 'Duty&Tax A/C# More',
-                    type: 'textbox'
                   }
                 ]
               }
@@ -577,6 +571,25 @@ var base_json = [{
               require: false
             }
           ],
+          'forwarder': [{
+            id: 'paytype',
+            title: '付款方式',
+            type: 'combobox',
+            option: {
+              'collect': {
+                label: 'Collect'
+              },
+              'prepaid': {
+                label: 'Prepaid'
+              },
+              'c&f': {
+                label: 'C&F'
+              },
+              'foc': {
+                label: 'Foc'
+              }
+            }
+          }],
           'other': [{
             id: 'couriername',
             title: '快递名称',
@@ -584,6 +597,7 @@ var base_json = [{
           }, {
             id: 'paytype',
             title: '付款方式',
+            type: 'combobox',
             option: {
               'collect': {
                 label: 'Collect'

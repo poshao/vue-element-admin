@@ -65,7 +65,14 @@ export const getStoreData = (children) => {
             break
         }
       } else {
-        result[v.id] = v.value
+        switch (v.control.type) {
+          case 'date':
+            result[v.id] = datetimeFormat(v.value, 'yyyy/MM/dd hh:mm:ss')
+            break
+          default:
+            result[v.id] = v.value
+            break
+        }
       }
     }
 

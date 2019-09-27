@@ -197,7 +197,9 @@ export function objectMerge(target, source) {
   }
   Object.keys(source).forEach(property => {
     const sourceProperty = source[property]
-    if (typeof sourceProperty === 'object') {
+    if (sourceProperty instanceof Date) {
+      target[property] = new Date(sourceProperty.valueOf())
+    } else if (typeof sourceProperty === 'object') {
       target[property] = objectMerge(target[property], sourceProperty)
     } else {
       target[property] = sourceProperty

@@ -24,11 +24,13 @@
             drag
             multiple
             max-size="20000"
+            :limit="10"
             :headers="{'xtoken':this.$store.state.user.token}"
             :file-list="upload.list"
             :on-preview="handlePreview"
             :on-remove="handleRemove"
-            :on-exceed="handleExceedSize"
+            :on-exceed="handleExceedCount"
+            :before-upload="handleCheckFileSize"
           >
             <i class="el-icon-upload" />
             <div>将文件拖到此处，或<em>点击上传</em></div>
@@ -102,8 +104,16 @@ export default {
     handleOrderInputSubmit(order) {
       this.orders = order
     },
-    handleExceedSize(file) {
-      this.$message({ message: file.name + '文件过大(文件上传限制5MB)', type: 'warnning' })
+    handleExceedCount(file) {
+      this.$message({ message: file.name + '上传失败，最多支持同时上传10个附件', type: 'warnning' })
+    },
+    handleCheckFileSize(file) {
+      // console.log(file)
+      if (file.size > 5 * 1024 * 1024) {
+        this.$message({ message: file.name + '上传失败，附件单个最大支持5MB', type: 'warnning' })
+        file.exceedsize = true
+        return false
+      }
     },
     handlePreview(file) {
       this.handleGetFile(file.name).then(res => {
@@ -112,29 +122,17 @@ export default {
     },
     handleRemove(file) {
       // console.log(file)
-      removeFile(file.name).then(res => {
-        this.$message({ message: '删除成功' })
-      })
+      if (file.raw.exceedsize === undefined) {
+        removeFile(file.name).then(res => {
+          this.$message({ message: '删除成功' })
+        })
+      }
     },
     handleSubmit() {
-      // let rs=getStoreData(this.ele.children)
-      // console.log(rs)
-      // return
-
-      // var detail = {}
       try {
         const detail = getStoreData(this.ele.children)
-        // convertViewData2StoreData(this.ele.more, detail)
-        // // this.combineResult(this.ele.more, detail)
 
         this.handleNewRequest(detail).then(res => {
-          // 发送消息通知
-          // console.log(this.notify)
-          // this.notify.info({
-          //   title: '新订单(' + detail.level + ')',
-          //   icon: this.avatorURL,
-          //   body: detail.dnei
-          // })
           this.$message({ message: '提交成功', type: 'success' })
           this.$router.replace({ name: 'linkcs_list' })
         })
@@ -166,21 +164,6 @@ export default {
       // console.log(ii)
 
       this.$set(this, 'ele', ii)
-      // return
-      // var ll = []
-      // getFieldsFromViewStruct(clone(this.$store.getters.baseForm), ll)
-      // console.log(ll)
-      // if (items === undefined) {
-      //   this.$set(this, 'ele', {
-      //     title: '',
-      //     type: 'null',
-      //     value: null,
-      //     more: deepClone(this.$store.getters['linkcs/baseForm']) // base_json
-      //   })
-      // } else {
-      //   // console.log(items)
-      //   this.$set(this, 'ele', items)
-      // }
       // 重置附件
       if (item === undefined) {
         resetAttchments(0).then(() => {
